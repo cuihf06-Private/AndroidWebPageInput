@@ -1,0 +1,36 @@
+# ===== Android =====
+# Build outputs
+app/build/
+build/
+android/app/build/
+android/build/
+
+# Gradle cache
+.gradle/
+android/.gradle/
+
+# Local machine config (contains SDK path, not portable)
+local.properties
+android/local.properties
+
+# Keystore / signing
+*.jks
+*.keystore
+
+# ===== Node.js / Webapp =====
+node_modules/
+webapp/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# ===== IDE / OS =====
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
