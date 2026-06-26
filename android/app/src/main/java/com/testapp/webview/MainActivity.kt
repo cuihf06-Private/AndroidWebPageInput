@@ -2,6 +2,8 @@ package com.testapp.webview
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.net.http.SslError
 import android.os.Build
 import android.os.Bundle
@@ -20,13 +22,41 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Resize layout when soft keyboard appears (fixes input field hidden behind keyboard)
-        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        // ---------------------------------------------------------------
+        // 防键盘闪白：在 setContentView 之前把窗口背景设为黑色。
+        //
+        // 闪白根因：
+        //   adjustResize / adjustPan 模式下，键盘弹出时 Android 先收缩/平移
+        //   Window，此时 WebView 还未完成重排/重绘，Window 背景色（默认白色）
+        //   短暂露出 → 肉眼看到"闪白"。
+        //
+        // 修复：将 Window 背景色改为与页面背景一致的黑色，
+        //   即使有短暂空隙也是黑对黑，视觉上无闪烁。
+        // ---------------------------------------------------------------
+        window.setBackgroundDrawable(ColorDrawable(Color.BLACK))
+
+        // ---------------------------------------------------------------
+        // 软键盘模式选择（与 AndroidManifest.xml 的 windowSoftInputMode 一致）：
+        //
+        //   adjustPan（当前使用）：
+        //     键盘弹出时不压缩 Window 尺寸，而是将焦点元素向上平移至可见区域。
+        //     页面布局不发生 resize → 无重排 → 闪白风险最低。
+        //     缺点：页面顶部内容可能被推出屏幕外。
+        //
+        //   adjustResize（备用，如需测试可改回）：
+        //     键盘弹出时压缩 Window 高度，WebView 随之 resize 并重排。
+        //     期间 Window 背景短暂露出 → 配合上面黑色背景后闪白已基本消除，
+        //     但 CSS 侧需用 height:100% 而非 100vh。
+        // ---------------------------------------------------------------
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
 
         setContentView(R.layout.activity_main)
 
         webView = findViewById(R.id.webView)
         progressBar = findViewById(R.id.progressBar)
+
+        // 防闪白：WebView 自身背景也设为黑色，避免页面加载/重排期间露出白色
+        webView.setBackgroundColor(Color.BLACK)
 
         setupWebView()
 
