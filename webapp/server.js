@@ -429,8 +429,8 @@ function getLabHTML(username) {
       <span class="tag tag-green">✓</span> Android Window 背景色 = 黑色（最关键）<br>
       <span class="tag tag-green">✓</span> WebView 背景色 = 黑色<br>
       <span class="tag tag-green">✓</span> CSS html/body 用 <code>height:100%</code> 替代 <code>100vh</code><br>
-      <span class="tag tag-green">✓</span> Manifest 改用 <code>adjustPan</code>（键盘不压缩页面，直接平移）<br>
-      <span class="tag tag-yellow">△</span> <code>adjustResize</code> 备用方案见代码注释
+      <span class="tag tag-green">✓</span> Manifest 使用 <code>adjustResize</code>（键盘压缩页面，内容始终可见）<br>
+      <span class="tag tag-green">✓</span> 黑色 Window 背景消除 resize 期间的闪白
     </div>
 
     <div class="section-title">单行输入</div>

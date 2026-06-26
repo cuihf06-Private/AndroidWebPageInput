@@ -36,19 +36,20 @@ class MainActivity : AppCompatActivity() {
         window.setBackgroundDrawable(ColorDrawable(Color.BLACK))
 
         // ---------------------------------------------------------------
-        // 软键盘模式选择（与 AndroidManifest.xml 的 windowSoftInputMode 一致）：
+        // 软键盘模式：adjustResize
         //
-        //   adjustPan（当前使用）：
-        //     键盘弹出时不压缩 Window 尺寸，而是将焦点元素向上平移至可见区域。
-        //     页面布局不发生 resize → 无重排 → 闪白风险最低。
-        //     缺点：页面顶部内容可能被推出屏幕外。
+        //   键盘弹出时 Window 高度收缩，WebView 随之缩小，焦点元素始终可见。
+        //   这是推荐模式——键盘不会遮挡页面内容。
         //
-        //   adjustResize（备用，如需测试可改回）：
-        //     键盘弹出时压缩 Window 高度，WebView 随之 resize 并重排。
-        //     期间 Window 背景短暂露出 → 配合上面黑色背景后闪白已基本消除，
-        //     但 CSS 侧需用 height:100% 而非 100vh。
+        //   原本担心的"闪白"问题已通过以下方式消除：
+        //     1. window.setBackgroundDrawable(黑色) ← 下方已设置
+        //     2. WebView 背景设为黑色
+        //     3. CSS html/body 使用 height:100% 而非 100vh
+        //   即使 Window 收缩期间有短暂的重绘空隙，也是黑色对黑色，视觉无闪烁。
+        //
+        //   adjustPan（已弃用）：不收缩页面，键盘直接覆盖底部内容 → 不可用。
         // ---------------------------------------------------------------
-        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
 
         setContentView(R.layout.activity_main)
 
