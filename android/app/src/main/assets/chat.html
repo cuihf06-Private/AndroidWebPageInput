@@ -45,7 +45,7 @@
 
     .hint {
       background: #fffbe6; color: #6b5900; font-size: 13px;
-      padding: 10px 14px; border-bottom: 1px solid #f1e6a8; line-height: 1.5;
+      padding: 10px 14px; border-bottom: 1px solid #f1e6a8; line-height: 1.6;
     }
 
     .chat {
@@ -111,9 +111,7 @@
       width: 100%;
       -webkit-tap-highlight-color: transparent;
     }
-    .menu-item:active {
-      background: rgba(255,255,255,.14);
-    }
+    .menu-item:active { background: rgba(255,255,255,.14); }
     .menu-icon {
       margin-right: 14px;
       font-size: 18px;
@@ -122,25 +120,24 @@
       line-height: 1;
       pointer-events: none;
     }
-    .menu-text {
-      flex: 1;
-      pointer-events: none;
-    }
+    .menu-text { flex: 1; pointer-events: none; }
 
     /* ============================================================
        CUSTOM SELECTION HANDLES (workaround for EMUI chromium overlay)
+       - Larger (32px) and shadowed so they always stand out
+       - Bright accent ring while dragging for clear visual feedback
        ============================================================ */
     .sel-handle {
       position: fixed;
-      width: 26px;
-      height: 26px;
-      margin-left: -13px;
-      margin-top: -13px;
+      width: 32px;
+      height: 32px;
+      margin-left: -16px;
+      margin-top: -16px;
       background: #4f46e5;
-      border: 2px solid #ffffff;
+      border: 3px solid #ffffff;
       border-radius: 50%;
-      box-shadow: 0 2px 6px rgba(0,0,0,.4);
-      z-index: 999999;
+      box-shadow: 0 3px 10px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.15);
+      z-index: 1000001;
       display: none;
       align-items: center;
       justify-content: center;
@@ -153,15 +150,17 @@
       pointer-events: auto;
       line-height: 1;
       color: #fff;
+      box-sizing: border-box;
     }
     .sel-handle::after {
       content: "🔍";
-      font-size: 13px;
+      font-size: 15px;
       pointer-events: none;
     }
     .sel-handle.dragging {
-      transform: scale(1.25);
-      background: #6366f1;
+      transform: scale(1.35);
+      background: #7c3aed;
+      box-shadow: 0 4px 14px rgba(124,58,237,.55), 0 0 0 3px rgba(124,58,237,.25);
     }
 
     .sel-menu {
@@ -170,7 +169,7 @@
       border-radius: 8px;
       padding: 4px;
       box-shadow: 0 6px 16px rgba(0,0,0,.4);
-      z-index: 999999;
+      z-index: 1000002;
       display: none;
       gap: 0;
       -webkit-user-select: none;
@@ -189,12 +188,8 @@
       font-family: inherit;
       -webkit-tap-highlight-color: transparent;
     }
-    .sel-menu button:active {
-      background: rgba(255,255,255,.18);
-    }
-    .sel-menu button + button {
-      border-left: 1px solid rgba(255,255,255,.18);
-    }
+    .sel-menu button:active { background: rgba(255,255,255,.18); }
+    .sel-menu button + button { border-left: 1px solid rgba(255,255,255,.18); }
 
     .sel-toast {
       position: fixed;
@@ -206,7 +201,7 @@
       padding: 10px 18px;
       border-radius: 20px;
       font-size: 14px;
-      z-index: 999999;
+      z-index: 1000003;
       display: none;
       pointer-events: none;
       -webkit-user-select: none;
@@ -217,6 +212,17 @@
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
       z-index: 999997;
+      display: none;
+      background: transparent;
+    }
+
+    /* Transparent overlay used during drag to keep the gesture captured
+       even if the finger passes over text/buttons that would otherwise
+       steal the touch and break the drag. */
+    .drag-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 1000000;
       display: none;
       background: transparent;
     }
@@ -233,7 +239,7 @@
   </div>
 
   <div class="hint">
-    测试说明：<b>长按下方任意一条对话泡泡</b>，会弹出一个 6 项菜单（复制 / <b>选择文字</b> / 编辑 / 润色 / 重新生成 / 删除）。点 <b>"选择文字"</b> 之后，文字被高亮，两端会出现 <b>带放大镜的紫色圆形拖动柄</b>，可拖动调整选区、点柄弹"复制/分享/搜索"。
+    测试说明：<b>长按下方任意一条对话泡泡</b>，会弹出 6 项菜单（复制 / <b>选择文字</b> / 编辑 / 润色 / 重新生成 / 删除）。点 <b>"选择文字"</b> 之后，<b>光标所在的那个词</b>被高亮，两端出现 <b>带放大镜的紫色圆形拖动柄</b>。拖动任一柄可向任意方向调整选区（不松手就能看到选区跟着变）；拖到屏幕边会自动滚动页面。点柄弹"复制/分享/搜索"。
   </div>
 
   <div class="chat">
@@ -315,16 +321,17 @@
     </button>
   </div>
 
-  <!-- ===== Custom selection handles (workaround for chromium overlay on EMUI) ===== -->
+  <!-- ===== Custom selection handles ===== -->
   <div id="sel-handle-start" class="sel-handle" aria-label="选区起点"></div>
-  <div id="sel-handle-end" class="sel-handle" aria-label="选区终点"></div>
+  <div id="sel-handle-end"   class="sel-handle" aria-label="选区终点"></div>
   <div id="sel-menu" class="sel-menu" role="toolbar">
-    <button id="sel-copy" type="button">复制</button>
-    <button id="sel-share" type="button">分享</button>
+    <button id="sel-copy"   type="button">复制</button>
+    <button id="sel-share"  type="button">分享</button>
     <button id="sel-search" type="button">搜索</button>
   </div>
   <div id="sel-toast" class="sel-toast"></div>
   <div id="selection-overlay" class="selection-overlay"></div>
+  <div id="drag-overlay" class="drag-overlay"></div>
 
   <script>
     (function () {
@@ -341,6 +348,7 @@
       var selMenu           = document.getElementById('sel-menu');
       var toast             = document.getElementById('sel-toast');
       var selectionOverlay  = document.getElementById('selection-overlay');
+      var dragOverlay       = document.getElementById('drag-overlay');
 
       // ---- State ----
       var inSelectionMode = false;
@@ -358,313 +366,19 @@
       var lastPosSignature = '';
       var dragSavedStart = null;
       var dragSavedEnd = null;
+      var dragHitTextAtDragStart = null;  // {offsetNode, offset} at drag start, used as anchor
+
+      // For auto-scroll
+      var autoScrollTimer = null;
+      var autoScrollDir = 0;
+
+      // For throttling onDragMove
+      var lastMoveTime = 0;
 
       // ============================================================
-      //  CUSTOM BUBBLE CONTEXT MENU
+      //  HELPERS
       // ============================================================
-
-      function showBubbleMenu(x, y, bubble) {
-        if (inSelectionMode) return;
-        longPressBubble = bubble;
-        bubbleMenu.style.display = 'flex';
-        // Measure
-        var menuW = bubbleMenu.offsetWidth  || 200;
-        var menuH = bubbleMenu.offsetHeight || 320;
-        // Anchor above the touch point, fall back to below
-        var left = x - menuW / 2;
-        var top  = y - menuH - 24;
-        if (top < 60) top = y + 24;
-        if (left < 8) left = 8;
-        if (left + menuW > window.innerWidth - 8) left = window.innerWidth - 8 - menuW;
-        bubbleMenu.style.left = left + 'px';
-        bubbleMenu.style.top  = top  + 'px';
-      }
-      function hideBubbleMenu() { bubbleMenu.style.display = 'none'; }
-
-      // Long-press on a bubble
-      function startLongPress(e, clientX, clientY) {
-        var bubble = e.target.closest && e.target.closest('.bubble');
-        if (!bubble) return;
-        hideBubbleMenu();
-        longPressBubble = bubble;
-        longPressX = clientX;
-        longPressY = clientY;
-        clearTimeout(longPressTimer);
-        longPressTimer = setTimeout(function () {
-          showBubbleMenu(longPressX, longPressY, longPressBubble);
-        }, 480);
-      }
-      function cancelLongPress() {
-        clearTimeout(longPressTimer);
-      }
-
-      document.addEventListener('touchstart', function (e) {
-        startLongPress(e, e.touches[0].clientX, e.touches[0].clientY);
-      }, { passive: true });
-      document.addEventListener('touchend',    cancelLongPress);
-      document.addEventListener('touchmove',   cancelLongPress);
-      document.addEventListener('touchcancel', cancelLongPress);
-
-      document.addEventListener('mousedown', function (e) {
-        if (e.button !== 0) return;
-        startLongPress(e, e.clientX, e.clientY);
-      });
-      document.addEventListener('mouseup',           cancelLongPress);
-      document.addEventListener('mousemove', function (e) { if (e.buttons) cancelLongPress(); });
-
-      // Menu item clicks
-      bubbleMenu.addEventListener('click', function (e) {
-        var item = e.target.closest('.menu-item');
-        if (!item) return;
-        e.stopPropagation();
-        var action = item.dataset.action;
-        var bubble = longPressBubble;
-        hideBubbleMenu();
-        if (!bubble) return;
-        if (action === 'copy') {
-          copyText(bubble.textContent).then(function () { showToast('已复制'); })
-                                      .catch(function () { showToast('复制失败'); });
-        } else if (action === 'select') {
-          enterSelectionMode(bubble);
-        } else if (action === 'edit') {
-          showToast('编辑功能：' + truncate(bubble.textContent, 18));
-        } else if (action === 'polish') {
-          showToast('润色功能开发中');
-        } else if (action === 'regen') {
-          showToast('重新生成功能开发中');
-        } else if (action === 'delete') {
-          showToast('删除功能开发中');
-        }
-      });
-
-      // Prevent long-press on the menu itself from triggering the bubble long-press
-      bubbleMenu.addEventListener('touchstart', function (e) { e.stopPropagation(); }, { passive: true });
-      bubbleMenu.addEventListener('mousedown',  function (e) { e.stopPropagation(); });
-
-      // Hide menu when tapping outside
-      function outsideTap(e) {
-        if (bubbleMenu.style.display !== 'flex') return;
-        if (bubbleMenu.contains(e.target)) return;
-        if (e.target.closest && e.target.closest('.bubble')) return;
-        hideBubbleMenu();
-      }
-      document.addEventListener('touchstart', outsideTap, true);
-      document.addEventListener('mousedown',  outsideTap, true);
-
-      // ============================================================
-      //  SELECTION MODE (entered by "选择文字")
-      // ============================================================
-
-      function enterSelectionMode(bubble) {
-        inSelectionMode = true;
-        var range = document.createRange();
-        range.selectNodeContents(bubble);
-        var sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
-        // Show overlay to absorb clicks outside (so they don't bubble to other handlers)
-        selectionOverlay.style.display = 'block';
-        lastPosSignature = '';
-        positionHandles();
-      }
-
-      function exitSelectionMode() {
-        inSelectionMode = false;
-        var sel = window.getSelection();
-        if (sel) sel.removeAllRanges();
-        selectionOverlay.style.display = 'none';
-        hideHandles();
-      }
-
-      selectionOverlay.addEventListener('touchstart', function (e) { e.preventDefault(); exitSelectionMode(); });
-      selectionOverlay.addEventListener('mousedown',  function (e) { e.preventDefault(); exitSelectionMode(); });
-
-      // Prevent the system from starting text selection while NOT in selection mode.
-      // This is what stops the system ActionMode toolbar (复制/分享/全选/翻译) from
-      // popping up on long-press of a bubble.
-      document.addEventListener('selectstart', function (e) {
-        if (!inSelectionMode) {
-          e.preventDefault();
-        }
-      }, true);
-
-      // ============================================================
-      //  CUSTOM HANDLE POSITIONING
-      // ============================================================
-
-      function hideHandles() {
-        startHandle.style.display = 'none';
-        endHandle.style.display   = 'none';
-        selMenu.style.display     = 'none';
-      }
-
-      function positionHandles() {
-        if (!inSelectionMode || suppressSelection) return;
-        var sel = window.getSelection();
-        if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
-          hideHandles();
-          lastPosSignature = '';
-          return;
-        }
-        var range = sel.getRangeAt(0);
-        var rects = range.getClientRects();
-        if (rects.length === 0) { hideHandles(); lastPosSignature = ''; return; }
-        var valid = [];
-        for (var i = 0; i < rects.length; i++) {
-          if (rects[i].width > 0 && rects[i].height > 0) valid.push(rects[i]);
-        }
-        if (valid.length === 0) { hideHandles(); lastPosSignature = ''; return; }
-        var firstRect = valid[0];
-        var lastRect  = valid[valid.length - 1];
-        var sig = Math.round(firstRect.left) + '|' + Math.round(firstRect.top + firstRect.height/2) + '|' +
-                  Math.round(lastRect.right)  + '|' + Math.round(lastRect.top  + lastRect.height/2);
-        if (sig === lastPosSignature) return;
-        lastPosSignature = sig;
-        startHandle.style.left = firstRect.left + 'px';
-        startHandle.style.top  = (firstRect.top + firstRect.height/2) + 'px';
-        startHandle.style.display = 'flex';
-        endHandle.style.left = lastRect.right + 'px';
-        endHandle.style.top  = (lastRect.top + lastRect.height/2) + 'px';
-        endHandle.style.display = 'flex';
-      }
-
-      var posTimer = null;
-      function schedulePosition() {
-        if (posTimer) return;
-        posTimer = setTimeout(function () { posTimer = null; positionHandles(); }, 40);
-      }
-      document.addEventListener('selectionchange', schedulePosition);
-
-      // ============================================================
-      //  HANDLE DRAG
-      // ============================================================
-
-      function captureSavedAnchors() {
-        var sel = window.getSelection();
-        if (!sel || sel.rangeCount === 0) { dragSavedStart = dragSavedEnd = null; return; }
-        var r = sel.getRangeAt(0);
-        dragSavedStart = { node: r.startContainer, offset: r.startOffset };
-        dragSavedEnd   = { node: r.endContainer,   offset: r.endOffset   };
-      }
-
-      function onDragStart(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        isDragging = true;
-        didMove = false;
-        dragHandle = e.currentTarget;
-        suppressSelection = true;
-        hideSelMenu();
-        captureSavedAnchors();
-        var point = e.touches && e.touches.length ? e.touches[0] : e;
-        dragStartX = point.clientX;
-        dragStartY = point.clientY;
-        dragOrigLeft = parseFloat(dragHandle.style.left) || 0;
-        dragOrigTop  = parseFloat(dragHandle.style.top)  || 0;
-        dragHandle.classList.add('dragging');
-        document.addEventListener('touchmove', onDragMove, { passive: false });
-        document.addEventListener('mousemove', onDragMove);
-        document.addEventListener('touchend',  onDragEnd);
-        document.addEventListener('mouseup',   onDragEnd);
-      }
-
-      function onDragMove(e) {
-        if (!isDragging) return;
-        e.preventDefault();
-        var point = e.touches && e.touches.length ? e.touches[0] : e;
-        var dx = point.clientX - dragStartX;
-        var dy = point.clientY - dragStartY;
-        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didMove = true;
-        dragHandle.style.left = (dragOrigLeft + dx) + 'px';
-        dragHandle.style.top  = (dragOrigTop  + dy) + 'px';
-      }
-
-      function pointToPosition(x, y) {
-        if (document.caretPositionFromPoint) {
-          return document.caretPositionFromPoint(x, y);
-        }
-        if (document.caretRangeFromPoint) {
-          var r = document.caretRangeFromPoint(x, y);
-          if (r) return { offsetNode: r.startContainer, offset: r.startOffset };
-        }
-        return null;
-      }
-
-      function onDragEnd(e) {
-        if (!isDragging) return;
-        isDragging = false;
-        dragHandle.classList.remove('dragging');
-        document.removeEventListener('touchmove', onDragMove);
-        document.removeEventListener('mousemove', onDragMove);
-        document.removeEventListener('touchend',  onDragEnd);
-        document.removeEventListener('mouseup',   onDragEnd);
-
-        if (!didMove) {
-          suppressSelection = false;
-          showSelMenu(dragHandle);
-          return;
-        }
-
-        var x = parseFloat(dragHandle.style.left) || 0;
-        var y = parseFloat(dragHandle.style.top)  || 0;
-        var pos = pointToPosition(x, y);
-        if (!pos) {
-          dragHandle.style.left = dragOrigLeft + 'px';
-          dragHandle.style.top  = dragOrigTop  + 'px';
-          suppressSelection = false;
-          positionHandles();
-          return;
-        }
-        try {
-          var sel = window.getSelection();
-          sel.removeAllRanges();
-          if (dragHandle === startHandle) {
-            sel.setBaseAndExtent(pos.offsetNode, pos.offset,
-                                 dragSavedEnd.node, dragSavedEnd.offset);
-          } else {
-            sel.setBaseAndExtent(dragSavedStart.node, dragSavedStart.offset,
-                                 pos.offsetNode, pos.offset);
-          }
-        } catch (err) {
-          // If setBaseAndExtent fails, just collapse to the new pos.
-          var r = document.createRange();
-          r.setStart(pos.offsetNode, pos.offset);
-          r.collapse(true);
-          var sel = window.getSelection();
-          sel.removeAllRanges();
-          sel.addRange(r);
-        }
-        suppressSelection = false;
-        lastPosSignature = '';
-        positionHandles();
-      }
-
-      startHandle.addEventListener('mousedown',  onDragStart);
-      startHandle.addEventListener('touchstart', onDragStart, { passive: false });
-      endHandle.addEventListener('mousedown',    onDragStart);
-      endHandle.addEventListener('touchstart',   onDragStart, { passive: false });
-
-      // ============================================================
-      //  SELECTION-LEVEL MENU (复制/分享/搜索, when a handle is tapped)
-      // ============================================================
-
-      function showSelMenu(handle) {
-        var rect = handle.getBoundingClientRect();
-        selMenu.style.display = 'flex';
-        var menuW = selMenu.offsetWidth || 180;
-        var left = rect.left + rect.width/2 - menuW/2;
-        var top  = rect.top - 12;
-        if (top < 10) top = rect.bottom + 12;
-        if (left < 8) left = 8;
-        if (left + menuW > window.innerWidth - 8) left = window.innerWidth - 8 - menuW;
-        selMenu.style.left = left + 'px';
-        selMenu.style.top  = top  + 'px';
-      }
-      function hideSelMenu() { selMenu.style.display = 'none'; }
-
-      // ============================================================
-      //  UTILITIES
-      // ============================================================
+      function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
       function showToast(msg) {
         toast.textContent = msg;
@@ -697,6 +411,477 @@
         });
       }
 
+      // ============================================================
+      //  CUSTOM BUBBLE CONTEXT MENU
+      // ============================================================
+
+      function showBubbleMenu(x, y, bubble) {
+        if (inSelectionMode) return;
+        longPressBubble = bubble;
+        bubbleMenu.style.display = 'flex';
+        var menuW = bubbleMenu.offsetWidth  || 200;
+        var menuH = bubbleMenu.offsetHeight || 320;
+        var left = x - menuW / 2;
+        var top  = y - menuH - 24;
+        if (top < 60) top = y + 24;
+        if (left < 8) left = 8;
+        if (left + menuW > window.innerWidth - 8) left = window.innerWidth - 8 - menuW;
+        bubbleMenu.style.left = left + 'px';
+        bubbleMenu.style.top  = top  + 'px';
+      }
+      function hideBubbleMenu() { bubbleMenu.style.display = 'none'; }
+
+      function startLongPress(e, clientX, clientY) {
+        var bubble = e.target.closest && e.target.closest('.bubble');
+        if (!bubble) return;
+        hideBubbleMenu();
+        longPressBubble = bubble;
+        longPressX = clientX;
+        longPressY = clientY;
+        clearTimeout(longPressTimer);
+        longPressTimer = setTimeout(function () {
+          showBubbleMenu(longPressX, longPressY, longPressBubble);
+        }, 480);
+      }
+      function cancelLongPress() { clearTimeout(longPressTimer); }
+
+      document.addEventListener('touchstart', function (e) {
+        startLongPress(e, e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
+      document.addEventListener('touchend',    cancelLongPress);
+      document.addEventListener('touchmove',   cancelLongPress);
+      document.addEventListener('touchcancel', cancelLongPress);
+
+      document.addEventListener('mousedown', function (e) {
+        if (e.button !== 0) return;
+        startLongPress(e, e.clientX, e.clientY);
+      });
+      document.addEventListener('mouseup',           cancelLongPress);
+      document.addEventListener('mousemove', function (e) { if (e.buttons) cancelLongPress(); });
+
+      // Menu item clicks
+      bubbleMenu.addEventListener('click', function (e) {
+        var item = e.target.closest('.menu-item');
+        if (!item) return;
+        e.stopPropagation();
+        var action = item.dataset.action;
+        var bubble = longPressBubble;
+        hideBubbleMenu();
+        if (!bubble) return;
+        if (action === 'copy') {
+          copyText(bubble.textContent).then(function () { showToast('已复制'); })
+                                      .catch(function () { showToast('复制失败'); });
+        } else if (action === 'select') {
+          enterSelectionMode(bubble, longPressX, longPressY);
+        } else if (action === 'edit') {
+          showToast('编辑功能：' + truncate(bubble.textContent, 18));
+        } else if (action === 'polish') {
+          showToast('润色功能开发中');
+        } else if (action === 'regen') {
+          showToast('重新生成功能开发中');
+        } else if (action === 'delete') {
+          showToast('删除功能开发中');
+        }
+      });
+
+      // Prevent long-press on the menu itself from triggering the bubble long-press
+      bubbleMenu.addEventListener('touchstart', function (e) { e.stopPropagation(); }, { passive: true });
+      bubbleMenu.addEventListener('mousedown',  function (e) { e.stopPropagation(); });
+
+      // Hide menu when tapping outside
+      function outsideTap(e) {
+        if (bubbleMenu.style.display !== 'flex') return;
+        if (bubbleMenu.contains(e.target)) return;
+        if (e.target.closest && e.target.closest('.bubble')) return;
+        hideBubbleMenu();
+      }
+      document.addEventListener('touchstart', outsideTap, true);
+      document.addEventListener('mousedown',  outsideTap, true);
+
+      // ============================================================
+      //  SELECTION MODE (entered by "选择文字")
+      // ============================================================
+
+      // Expand to a single "word" at the given text position.
+      // For Chinese, a "word" is a single character (since there are no spaces).
+      // For Latin/digits, a "word" is a contiguous run of word characters.
+      function selectWordAtPoint(x, y) {
+        var pos = document.caretPositionFromPoint
+          ? document.caretPositionFromPoint(x, y)
+          : (document.caretRangeFromPoint
+              ? (function () {
+                  var r = document.caretRangeFromPoint(x, y);
+                  return r ? { offsetNode: r.startContainer, offset: r.startOffset } : null;
+                })()
+              : null);
+        if (!pos) return null;
+        // Walk into the text node
+        var node = pos.offsetNode;
+        var offset = pos.offset;
+        while (node && node.nodeType !== 3) {
+          if (node.firstChild) { node = node.firstChild; offset = 0; } else break;
+        }
+        if (!node || node.nodeType !== 3) return null;
+        var text = node.textContent;
+        if (text.length === 0) return null;
+        if (offset > text.length) offset = text.length;
+        var start = offset, end = offset;
+        // For Chinese, each char is its own word — don't extend.
+        // For Latin/digit runs, extend to the run boundaries.
+        var ch = text.charAt(offset);
+        if (/[一-龥　-〿＀-￯]/.test(ch)) {
+          // Chinese / full-width punctuation: just this one character.
+          if (start > 0) start++;
+          if (end < text.length) end++;
+        } else {
+          var word = /[A-Za-z0-9_]/;
+          while (start > 0 && word.test(text.charAt(start - 1))) start--;
+          while (end < text.length && word.test(text.charAt(end))) end++;
+          if (start === end) {
+            if (start > 0) start--;
+            else if (end < text.length) end++;
+          }
+        }
+        var range = document.createRange();
+        try {
+          range.setStart(node, start);
+          range.setEnd(node, end);
+          return range;
+        } catch (e) { return null; }
+      }
+
+      function enterSelectionMode(bubble, clickX, clickY) {
+        inSelectionMode = true;
+        var range = null;
+        if (typeof clickX === 'number' && typeof clickY === 'number') {
+          range = selectWordAtPoint(clickX, clickY);
+        }
+        if (!range) {
+          // Fallback: select the whole bubble.
+          range = document.createRange();
+          try { range.selectNodeContents(bubble); } catch (e) { return; }
+        }
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        selectionOverlay.style.display = 'block';
+        lastPosSignature = '';
+        positionHandles();
+      }
+
+      function exitSelectionMode() {
+        inSelectionMode = false;
+        var sel = window.getSelection();
+        if (sel) sel.removeAllRanges();
+        selectionOverlay.style.display = 'none';
+        hideHandles();
+      }
+
+      selectionOverlay.addEventListener('touchstart', function (e) { e.preventDefault(); exitSelectionMode(); });
+      selectionOverlay.addEventListener('mousedown',  function (e) { e.preventDefault(); exitSelectionMode(); });
+
+      // Prevent the system from starting text selection while NOT in selection mode.
+      document.addEventListener('selectstart', function (e) {
+        if (!inSelectionMode) e.preventDefault();
+      }, true);
+
+      // ============================================================
+      //  HANDLE POSITIONING (with viewport clipping)
+      // ============================================================
+
+      function hideHandles() {
+        startHandle.style.display = 'none';
+        endHandle.style.display   = 'none';
+        selMenu.style.display     = 'none';
+      }
+
+      // Returns the client rects of the *current* selection, filtered to
+      // those with non-zero size. Works for selections that span multiple
+      // bubbles.
+      function selectionRects() {
+        var sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
+        var range = sel.getRangeAt(0);
+        var rects = range.getClientRects();
+        var valid = [];
+        for (var i = 0; i < rects.length; i++) {
+          if (rects[i].width > 0 && rects[i].height > 0) valid.push(rects[i]);
+        }
+        return valid.length ? valid : null;
+      }
+
+      // Position the non-dragged handle from a list of rects.
+      function positionHandleFromRects(handle, rects, isStart) {
+        if (!rects) { handle.style.display = 'none'; return; }
+        var r = isStart ? rects[0] : rects[rects.length - 1];
+        var cx = isStart ? r.left : r.right;
+        var cy = r.top + r.height / 2;
+        // Clip into the viewport so the handle is always visible.
+        cx = clamp(cx, 18, window.innerWidth  - 18);
+        cy = clamp(cy, 18, window.innerHeight - 18);
+        handle.style.left = cx + 'px';
+        handle.style.top  = cy + 'px';
+        handle.style.display = 'flex';
+      }
+
+      function positionHandles() {
+        if (!inSelectionMode || suppressSelection) return;
+        var rects = selectionRects();
+        if (!rects) { hideHandles(); lastPosSignature = ''; return; }
+        var firstRect = rects[0];
+        var lastRect  = rects[rects.length - 1];
+        var sig = Math.round(firstRect.left) + '|' + Math.round(firstRect.top + firstRect.height/2) + '|' +
+                  Math.round(lastRect.right)  + '|' + Math.round(lastRect.top  + lastRect.height/2);
+        if (sig === lastPosSignature) return;
+        lastPosSignature = sig;
+        if (dragHandle !== startHandle) positionHandleFromRects(startHandle, rects, true);
+        if (dragHandle !== endHandle)   positionHandleFromRects(endHandle,   rects, false);
+      }
+
+      var posTimer = null;
+      function schedulePosition() {
+        if (posTimer) return;
+        posTimer = setTimeout(function () { posTimer = null; positionHandles(); }, 40);
+      }
+      document.addEventListener('selectionchange', schedulePosition);
+
+      // ============================================================
+      //  HANDLE DRAG (with live selection update + auto-scroll)
+      // ============================================================
+
+      function captureSavedAnchors() {
+        var sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) { dragSavedStart = dragSavedEnd = null; return; }
+        var r = sel.getRangeAt(0);
+        dragSavedStart = { node: r.startContainer, offset: r.startOffset };
+        dragSavedEnd   = { node: r.endContainer,   offset: r.endOffset   };
+      }
+
+      // Find the text position under (x, y). Returns {offsetNode, offset} or null.
+      function pointToPosition(x, y) {
+        if (document.caretPositionFromPoint) {
+          return document.caretPositionFromPoint(x, y);
+        }
+        if (document.caretRangeFromPoint) {
+          var r = document.caretRangeFromPoint(x, y);
+          if (r) return { offsetNode: r.startContainer, offset: r.startOffset };
+        }
+        return null;
+      }
+
+      function onDragStart(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        isDragging = true;
+        didMove = false;
+        dragHandle = e.currentTarget;
+        suppressSelection = true;
+        hideSelMenu();
+        captureSavedAnchors();
+        dragHitTextAtDragStart = pointToPosition(dragOrigLeftForHandle(), dragOrigTopForHandle());
+        var point = e.touches && e.touches.length ? e.touches[0] : e;
+        dragStartX = point.clientX;
+        dragStartY = point.clientY;
+        dragOrigLeft = parseFloat(dragHandle.style.left) || 0;
+        dragOrigTop  = parseFloat(dragHandle.style.top)  || 0;
+        dragHandle.classList.add('dragging');
+        // Show a transparent overlay so the touch can't be stolen by
+        // bubble text or other elements as the finger moves.
+        dragOverlay.style.display = 'block';
+        document.addEventListener('touchmove', onDragMove, { passive: false });
+        document.addEventListener('mousemove', onDragMove);
+        document.addEventListener('touchend',  onDragEnd);
+        document.addEventListener('mouseup',   onDragEnd);
+      }
+      function dragOrigLeftForHandle() { return parseFloat(dragHandle.style.left) || 0; }
+      function dragOrigTopForHandle()  { return parseFloat(dragHandle.style.top)  || 0; }
+
+      // Apply the current drag position to the selection AND reposition
+      // the *other* handle in real time. Throttled to ~60fps.
+      function onDragMove(e) {
+        if (!isDragging) return;
+        e.preventDefault();
+        var now = Date.now();
+        if (now - lastMoveTime < 16) {
+          // Still update the dragged handle's visual position even when
+          // throttled, so the finger tracks the handle.
+          var p = e.touches && e.touches.length ? e.touches[0] : e;
+          var dx0 = p.clientX - dragStartX;
+          var dy0 = p.clientY - dragStartY;
+          dragHandle.style.left = (dragOrigLeft + dx0) + 'px';
+          dragHandle.style.top  = (dragOrigTop  + dy0) + 'px';
+          return;
+        }
+        lastMoveTime = now;
+
+        var point = e.touches && e.touches.length ? e.touches[0] : e;
+        var dx = point.clientX - dragStartX;
+        var dy = point.clientY - dragStartY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didMove = true;
+
+        var x = dragOrigLeft + dx;
+        var y = dragOrigTop  + dy;
+        // Keep the dragged handle within the viewport so the user can
+        // always see it (and so onDragEnd can find text under it).
+        x = clamp(x, 18, window.innerWidth  - 18);
+        y = clamp(y, 18, window.innerHeight - 18);
+        dragHandle.style.left = x + 'px';
+        dragHandle.style.top  = y + 'px';
+
+        // Live update the selection
+        var pos = pointToPosition(x, y);
+        if (pos) {
+          try {
+            var sel = window.getSelection();
+            sel.removeAllRanges();
+            if (dragHandle === startHandle) {
+              sel.setBaseAndExtent(pos.offsetNode, pos.offset,
+                                   dragSavedEnd.node, dragSavedEnd.offset);
+            } else {
+              sel.setBaseAndExtent(dragSavedStart.node, dragSavedStart.offset,
+                                   pos.offsetNode, pos.offset);
+            }
+            // Reposition the OTHER handle to the new selection's
+            // start/end, so the user sees the range grow in real time.
+            var rects = selectionRects();
+            if (rects) {
+              if (dragHandle === startHandle) positionHandleFromRects(endHandle,   rects, false);
+              else                             positionHandleFromRects(startHandle, rects, true);
+            }
+          } catch (err) { /* keep going */ }
+        }
+
+        // Auto-scroll if near top/bottom
+        if (point.clientY < 60)        startAutoScroll(-1);
+        else if (point.clientY > window.innerHeight - 60) startAutoScroll(1);
+        else                           stopAutoScroll();
+      }
+
+      function onDragEnd(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        stopAutoScroll();
+        dragHandle.classList.remove('dragging');
+        dragOverlay.style.display = 'none';
+        document.removeEventListener('touchmove', onDragMove);
+        document.removeEventListener('mousemove', onDragMove);
+        document.removeEventListener('touchend',  onDragEnd);
+        document.removeEventListener('mouseup',   onDragEnd);
+
+        if (!didMove) {
+          suppressSelection = false;
+          showSelMenu(dragHandle);
+          return;
+        }
+
+        // Use the current visual position of the dragged handle as the
+        // final drop point. This matches what the user saw during drag.
+        var x = parseFloat(dragHandle.style.left) || 0;
+        var y = parseFloat(dragHandle.style.top)  || 0;
+        var pos = pointToPosition(x, y);
+        if (!pos) {
+          // Revert to the saved anchors
+          try {
+            var sel0 = window.getSelection();
+            sel0.removeAllRanges();
+            if (dragSavedStart && dragSavedEnd) {
+              sel0.setBaseAndExtent(dragSavedStart.node, dragSavedStart.offset,
+                                    dragSavedEnd.node,   dragSavedEnd.offset);
+            }
+          } catch (e) {}
+          suppressSelection = false;
+          lastPosSignature = '';
+          positionHandles();
+          return;
+        }
+        try {
+          var sel = window.getSelection();
+          sel.removeAllRanges();
+          if (dragHandle === startHandle) {
+            sel.setBaseAndExtent(pos.offsetNode, pos.offset,
+                                 dragSavedEnd.node, dragSavedEnd.offset);
+          } else {
+            sel.setBaseAndExtent(dragSavedStart.node, dragSavedStart.offset,
+                                 pos.offsetNode, pos.offset);
+          }
+        } catch (err) {
+          var r = document.createRange();
+          r.setStart(pos.offsetNode, pos.offset);
+          r.collapse(true);
+          var sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(r);
+        }
+        suppressSelection = false;
+        lastPosSignature = '';
+        positionHandles();
+      }
+
+      startHandle.addEventListener('mousedown',  onDragStart);
+      startHandle.addEventListener('touchstart', onDragStart, { passive: false });
+      endHandle.addEventListener('mousedown',    onDragStart);
+      endHandle.addEventListener('touchstart',   onDragStart, { passive: false });
+
+      // ============================================================
+      //  AUTO-SCROLL (during drag)
+      // ============================================================
+      function autoScrollStep() {
+        if (autoScrollDir === 0) return;
+        try { window.scrollBy(0, autoScrollDir * 8); } catch (e) {}
+        // Update the dragged handle's y to track the scroll, and re-evaluate
+        // the selection so the other handle stays accurate.
+        if (isDragging && dragHandle) {
+          var selNow = window.getSelection();
+          if (selNow && selNow.rangeCount) {
+            var rects = selectionRects();
+            if (rects) {
+              if (dragHandle === startHandle) positionHandleFromRects(endHandle,   rects, false);
+              else                             positionHandleFromRects(startHandle, rects, true);
+            }
+          }
+        }
+        autoScrollTimer = setTimeout(autoScrollStep, 32);
+      }
+      function startAutoScroll(dir) {
+        if (autoScrollDir === dir) return;
+        stopAutoScroll();
+        autoScrollDir = dir;
+        autoScrollTimer = setTimeout(autoScrollStep, 120);
+      }
+      function stopAutoScroll() {
+        if (autoScrollTimer) clearTimeout(autoScrollTimer);
+        autoScrollTimer = null;
+        autoScrollDir = 0;
+      }
+
+      // ============================================================
+      //  SELECTION-LEVEL MENU (复制/分享/搜索, when a handle is tapped)
+      // ============================================================
+
+      function showSelMenu(handle) {
+        var rect = handle.getBoundingClientRect();
+        selMenu.style.display = 'flex';
+        var menuW = selMenu.offsetWidth || 180;
+        var left = rect.left + rect.width/2 - menuW/2;
+        var top  = rect.top - 12;
+        if (top < 10) top = rect.bottom + 12;
+        if (left < 8) left = 8;
+        if (left + menuW > window.innerWidth - 8) left = window.innerWidth - 8 - menuW;
+        selMenu.style.left = left + 'px';
+        selMenu.style.top  = top  + 'px';
+      }
+      function hideSelMenu() { selMenu.style.display = 'none'; }
+
+      // Hide sel-menu when tapping outside
+      function outsideSelMenuTap(e) {
+        if (selMenu.style.display !== 'flex') return;
+        if (selMenu.contains(e.target)) return;
+        if (e.target === startHandle || e.target === endHandle) return;
+        hideSelMenu();
+      }
+      document.addEventListener('mousedown',  outsideSelMenuTap, true);
+      document.addEventListener('touchstart', outsideSelMenuTap, true);
+
       document.getElementById('sel-copy').addEventListener('click', function (e) {
         e.stopPropagation();
         var text = window.getSelection() ? window.getSelection().toString() : '';
@@ -725,17 +910,6 @@
         hideSelMenu();
       });
 
-      // Hide sel-menu when tapping outside
-      function outsideSelMenuTap(e) {
-        if (selMenu.style.display !== 'flex') return;
-        if (selMenu.contains(e.target)) return;
-        if (e.target === startHandle || e.target === endHandle) return;
-        hideSelMenu();
-      }
-      document.addEventListener('mousedown',  outsideSelMenuTap, true);
-      document.addEventListener('touchstart', outsideSelMenuTap, true);
-
-      // Initial
       positionHandles();
     })();
   </script>
