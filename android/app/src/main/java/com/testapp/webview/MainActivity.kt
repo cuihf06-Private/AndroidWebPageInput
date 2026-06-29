@@ -35,7 +35,10 @@ class MainActivity : AppCompatActivity() {
         if (savedInstanceState != null) {
             webView.restoreState(savedInstanceState)
         } else {
-            webView.loadUrl(TARGET_URL)
+            // Load the login page bundled in the APK's assets.
+            // This makes the APK self-contained — no dependency on a remote server
+            // (which might still be running an older branch's code).
+            webView.loadUrl(ASSET_INDEX_URL)
         }
     }
 
@@ -116,7 +119,9 @@ class MainActivity : AppCompatActivity() {
             ): Boolean {
                 // Let the WebView handle all navigation within the app
                 val url = request.url.toString()
-                return if (url.startsWith("http://") || url.startsWith("https://")) {
+                return if (url.startsWith("http://") ||
+                           url.startsWith("https://") ||
+                           url.startsWith("file:///android_asset/")) {
                     view.loadUrl(url)
                     true
                 } else {
@@ -175,6 +180,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "MainActivity"
-        private const val TARGET_URL = "https://test.tinybot.cloud"
+        // Self-contained: load HTML bundled inside the APK.
+        private const val ASSET_INDEX_URL = "file:///android_asset/index.html"
     }
 }
