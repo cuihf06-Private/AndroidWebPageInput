@@ -505,6 +505,12 @@
       // Expand to a single "word" at the given text position.
       // For Chinese, a "word" is a single character (since there are no spaces).
       // For Latin/digits, a "word" is a contiguous run of word characters.
+      //
+      // caretPositionFromPoint returns the caret position BETWEEN characters
+      // (so for "你好", offset=1 means between 你 and 好). A naive [start,end)
+      // built from that offset alone is empty, so we explicitly pick the
+      // character to the RIGHT of the caret (offset, offset+1) — falling
+      // back to the LEFT (offset-1, offset) when the caret is at the end.
       function selectWordAtPoint(x, y) {
         var pos = document.caretPositionFromPoint
           ? document.caretPositionFromPoint(x, y)
@@ -525,29 +531,39 @@
         var text = node.textContent;
         if (text.length === 0) return null;
         if (offset > text.length) offset = text.length;
-        var start = offset, end = offset;
-        // For Chinese, each char is its own word — don't extend.
-        // For Latin/digit runs, extend to the run boundaries.
-        var ch = text.charAt(offset);
-        if (/[一-龥　-〿＀-￯]/.test(ch)) {
-          // Chinese / full-width punctuation: just this one character.
-          if (start > 0) start++;
-          if (end < text.length) end++;
-        } else {
-          var word = /[A-Za-z0-9_]/;
-          while (start > 0 && word.test(text.charAt(start - 1))) start--;
-          while (end < text.length && word.test(text.charAt(end))) end++;
-          if (start === end) {
-            if (start > 0) start--;
-            else if (end < text.length) end++;
-          }
-        }
+        if (offset < 0) offset = 0;
+
+        // Pick the character to the right of the caret; fall back to left
+        // when the caret is at the very end of the text.
+        var chIdx;
+        if (offset < text.length) chIdx = offset;
+        else if (offset > 0)      chIdx = offset - 1;
+        else return null;
+
+        var ch = text.charAt(chIdx);
+        var word = /[A-Za-z0-9_]/;
+        var cjk  = /[一-鿿　-〿＀-￯]/;
         var range = document.createRange();
-        try {
-          range.setStart(node, start);
-          range.setEnd(node, end);
-          return range;
-        } catch (e) { return null; }
+
+        if (word.test(ch)) {
+          // Latin/digit/underscore: extend to the surrounding word
+          var s = chIdx, e = chIdx + 1;
+          while (s > 0 && word.test(text.charAt(s - 1))) s--;
+          while (e < text.length && word.test(text.charAt(e))) e++;
+          if (s === e) return null;
+          range.setStart(node, s);
+          range.setEnd(node, e);
+        } else if (cjk.test(ch)) {
+          // CJK / full-width punctuation: just this one character
+          range.setStart(node, chIdx);
+          range.setEnd(node, chIdx + 1);
+        } else {
+          // Whitespace or half-width punctuation: don't select, let caller
+          // fall back to whole-bubble selection.
+          return null;
+        }
+
+        try { return range; } catch (e) { return null; }
       }
 
       function enterSelectionMode(bubble, clickX, clickY) {
