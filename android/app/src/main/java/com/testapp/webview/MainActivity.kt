@@ -5,6 +5,8 @@ import android.graphics.Bitmap
 import android.net.http.SslError
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
+import android.view.ActionMode
 import android.view.View
 import android.view.WindowManager
 import android.webkit.*
@@ -13,7 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var webView: WebView
+    private lateinit var webView: SelectionWebView
     private lateinit var progressBar: ProgressBar
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -86,8 +88,18 @@ class MainActivity : AppCompatActivity() {
         webView.isFocusableInTouchMode = true
 
         // Long-press text selection: enabled by default; do NOT suppress it.
+        // We deliberately do NOT install a setOnLongClickListener that returns
+        // true — that would consume the long-click and prevent the system
+        // "Select text" menu from appearing at all.
         webView.isLongClickable = true
         webView.isHapticFeedbackEnabled = true
+
+        // Observe the (forced-floating) selection ActionMode so we can verify
+        // at runtime that the framework is using TYPE_FLOATING — useful when
+        // diagnosing the "highlight appears but no handles" symptom.
+        webView.onSelectionActionMode = { mode ->
+            Log.d(TAG, "Selection ActionMode created: type=${mode.type} (TYPE_FLOATING=${ActionMode.TYPE_FLOATING})")
+        }
 
         webView.webViewClient = object : WebViewClient() {
             override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
@@ -162,6 +174,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
+        private const val TAG = "MainActivity"
         private const val TARGET_URL = "https://test.tinybot.cloud"
     }
 }
