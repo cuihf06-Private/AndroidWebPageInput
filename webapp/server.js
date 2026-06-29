@@ -267,6 +267,29 @@ function getHTML(page) {
 }
 
 function getChatHTML(username) {
+  // Read the chat.html that's bundled into the APK assets, so the local
+  // server and the APK stay in lockstep (one source of truth). The page
+  // reads the username from `?user=` (file:// builds use URL hash, but
+  // here we have to use the query string because cookies are HTTP-only
+  // on this dev server and JS-side we keep things simple).
+  const fs = require('fs');
+  const path = require('path');
+  const chatHtmlPath = path.join(__dirname, '..', 'android', 'app', 'src', 'main', 'assets', 'chat.html');
+  let html;
+  try {
+    html = fs.readFileSync(chatHtmlPath, 'utf8');
+  } catch (e) {
+    return '<p>chat.html not found at ' + chatHtmlPath + '</p>';
+  }
+  // Inject the username via a tiny <script> right after <body>.
+  // The page's JS reads user from location.hash; we synthesize one.
+  return html.replace(
+    '<body>',
+    '<body>\n  <script>if (!location.hash) location.hash = \'user=' + encodeURIComponent(username) + '\';</script>'
+  );
+}
+
+function _legacy_getChatHTML_unused(username) {
   // Mock chat content. Mix of user / assistant bubbles, all selectable.
   return `<!DOCTYPE html>
 <html lang="zh-CN">
