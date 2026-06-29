@@ -90,19 +90,13 @@ class MainActivity : AppCompatActivity() {
         webView.isFocusable = true
         webView.isFocusableInTouchMode = true
 
-        // Long-press text selection: enabled by default; do NOT suppress it.
-        // We deliberately do NOT install a setOnLongClickListener that returns
-        // true — that would consume the long-click and prevent the system
-        // "Select text" menu from appearing at all.
+        // Long-press text selection: the page owns the UI (custom 6-item
+        // menu on long-press, custom magnifier handles after "选择文字").
+        // The system "复制/分享/全选/翻译" toolbar is suppressed inside
+        // SelectionWebView via OnLongClickListener + startActionMode
+        // overrides. Haptics stay on so the long-press still has feedback.
         webView.isLongClickable = true
         webView.isHapticFeedbackEnabled = true
-
-        // Observe the (forced-floating) selection ActionMode so we can verify
-        // at runtime that the framework is using TYPE_FLOATING — useful when
-        // diagnosing the "highlight appears but no handles" symptom.
-        webView.onSelectionActionMode = { mode ->
-            Log.d(TAG, "Selection ActionMode created: type=${mode.type} (TYPE_FLOATING=${ActionMode.TYPE_FLOATING})")
-        }
 
         webView.webViewClient = object : WebViewClient() {
             override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {

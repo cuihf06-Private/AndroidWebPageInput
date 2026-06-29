@@ -8,7 +8,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     /* ============================================================
-       TEXT-SELECTION SCOPING (still required even with custom handles)
+       TEXT-SELECTION SCOPING
        ============================================================ */
     html, body {
       -webkit-user-select: none;
@@ -77,20 +77,69 @@
     .row.user .meta { text-align: right; }
 
     /* ============================================================
+       CUSTOM BUBBLE CONTEXT MENU (matches the screenshot)
+       ============================================================ */
+    .bubble-menu {
+      position: fixed;
+      background: rgba(20, 20, 20, 0.94);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border-radius: 12px;
+      padding: 6px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.45);
+      z-index: 999998;
+      display: none;
+      flex-direction: column;
+      min-width: 180px;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      pointer-events: auto;
+    }
+    .menu-item {
+      display: flex;
+      align-items: center;
+      padding: 11px 14px;
+      background: transparent;
+      color: #fff;
+      border: none;
+      font-size: 15px;
+      text-align: left;
+      cursor: pointer;
+      font-family: inherit;
+      border-radius: 8px;
+      width: 100%;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .menu-item:active {
+      background: rgba(255,255,255,.14);
+    }
+    .menu-icon {
+      margin-right: 14px;
+      font-size: 18px;
+      width: 22px;
+      text-align: center;
+      line-height: 1;
+      pointer-events: none;
+    }
+    .menu-text {
+      flex: 1;
+      pointer-events: none;
+    }
+
+    /* ============================================================
        CUSTOM SELECTION HANDLES (workaround for EMUI chromium overlay)
-       These render on top of the WebView via CSS position:fixed,
-       independent of chromium's PopupTouchHandleDrawable layer.
        ============================================================ */
     .sel-handle {
       position: fixed;
-      width: 24px;
-      height: 24px;
-      margin-left: -12px;
-      margin-top: -12px;
+      width: 26px;
+      height: 26px;
+      margin-left: -13px;
+      margin-top: -13px;
       background: #4f46e5;
       border: 2px solid #ffffff;
       border-radius: 50%;
-      box-shadow: 0 2px 6px rgba(0,0,0,.35);
+      box-shadow: 0 2px 6px rgba(0,0,0,.4);
       z-index: 999999;
       display: none;
       align-items: center;
@@ -102,14 +151,12 @@
       -webkit-touch-callout: none;
       -webkit-tap-highlight-color: transparent;
       pointer-events: auto;
-      font-size: 12px;
       line-height: 1;
       color: #fff;
-      font-weight: 700;
     }
     .sel-handle::after {
       content: "🔍";
-      font-size: 12px;
+      font-size: 13px;
       pointer-events: none;
     }
     .sel-handle.dragging {
@@ -122,7 +169,7 @@
       background: rgba(30, 30, 30, 0.96);
       border-radius: 8px;
       padding: 4px;
-      box-shadow: 0 6px 16px rgba(0,0,0,.35);
+      box-shadow: 0 6px 16px rgba(0,0,0,.4);
       z-index: 999999;
       display: none;
       gap: 0;
@@ -140,6 +187,7 @@
       border-radius: 4px;
       cursor: pointer;
       font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
     }
     .sel-menu button:active {
       background: rgba(255,255,255,.18);
@@ -153,7 +201,7 @@
       bottom: 100px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,.82);
+      background: rgba(0,0,0,.85);
       color: #fff;
       padding: 10px 18px;
       border-radius: 20px;
@@ -163,6 +211,14 @@
       pointer-events: none;
       -webkit-user-select: none;
       user-select: none;
+    }
+
+    .selection-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 999997;
+      display: none;
+      background: transparent;
     }
   </style>
 </head>
@@ -177,7 +233,7 @@
   </div>
 
   <div class="hint">
-    测试说明：长按下方任意一条 <b>对话泡泡</b>，系统会弹出顶部的"复制/分享/全选/翻译"功能条；与此同时，<b>对话泡泡文字两端会出现一对带放大镜的拖动柄</b>（橙色圆形）。拖动任一端可调整选区；点击任一端可弹出"复制 / 分享 / 搜索"菜单。
+    测试说明：<b>长按下方任意一条对话泡泡</b>，会弹出一个 6 项菜单（复制 / <b>选择文字</b> / 编辑 / 润色 / 重新生成 / 删除）。点 <b>"选择文字"</b> 之后，文字被高亮，两端会出现 <b>带放大镜的紫色圆形拖动柄</b>，可拖动调整选区、点柄弹"复制/分享/搜索"。
   </div>
 
   <div class="chat">
@@ -231,6 +287,34 @@
     </div>
   </div>
 
+  <!-- ===== Custom bubble context menu (6 items, matches screenshot) ===== -->
+  <div id="bubble-menu" class="bubble-menu">
+    <button class="menu-item" data-action="copy" type="button">
+      <span class="menu-icon">📋</span>
+      <span class="menu-text">复制</span>
+    </button>
+    <button class="menu-item" data-action="select" type="button">
+      <span class="menu-icon">⤓</span>
+      <span class="menu-text">选择文字</span>
+    </button>
+    <button class="menu-item" data-action="edit" type="button">
+      <span class="menu-icon">✏️</span>
+      <span class="menu-text">编辑</span>
+    </button>
+    <button class="menu-item" data-action="polish" type="button">
+      <span class="menu-icon">✨</span>
+      <span class="menu-text">润色</span>
+    </button>
+    <button class="menu-item" data-action="regen" type="button">
+      <span class="menu-icon">🔄</span>
+      <span class="menu-text">重新生成</span>
+    </button>
+    <button class="menu-item" data-action="delete" type="button">
+      <span class="menu-icon">🗑</span>
+      <span class="menu-text">删除</span>
+    </button>
+  </div>
+
   <!-- ===== Custom selection handles (workaround for chromium overlay on EMUI) ===== -->
   <div id="sel-handle-start" class="sel-handle" aria-label="选区起点"></div>
   <div id="sel-handle-end" class="sel-handle" aria-label="选区终点"></div>
@@ -240,38 +324,182 @@
     <button id="sel-search" type="button">搜索</button>
   </div>
   <div id="sel-toast" class="sel-toast"></div>
+  <div id="selection-overlay" class="selection-overlay"></div>
 
   <script>
     (function () {
-      var startHandle = document.getElementById('sel-handle-start');
-      var endHandle   = document.getElementById('sel-handle-end');
-      var menu        = document.getElementById('sel-menu');
-      var toast       = document.getElementById('sel-toast');
-
       // ---- Read username from URL hash ----
       var h = (location.hash || '').replace(/^#/, '');
       var m = h.match(/user=([^&]+)/);
       var user = m ? decodeURIComponent(m[1]) : '游客';
       document.getElementById('who').textContent = user;
 
+      // ---- Element refs ----
+      var bubbleMenu        = document.getElementById('bubble-menu');
+      var startHandle       = document.getElementById('sel-handle-start');
+      var endHandle         = document.getElementById('sel-handle-end');
+      var selMenu           = document.getElementById('sel-menu');
+      var toast             = document.getElementById('sel-toast');
+      var selectionOverlay  = document.getElementById('selection-overlay');
+
       // ---- State ----
+      var inSelectionMode = false;
+      var longPressTimer = null;
+      var longPressBubble = null;
+      var longPressX = 0, longPressY = 0;
+
+      // For handle drag
       var isDragging = false;
       var dragHandle = null;
       var dragStartX = 0, dragStartY = 0;
       var dragOrigLeft = 0, dragOrigTop = 0;
       var didMove = false;
-      var suppressSelection = false;     // when true, ignore selectionchange
-      var lastPosSignature = '';          // for deduping redundant position updates
+      var suppressSelection = false;
+      var lastPosSignature = '';
+      var dragSavedStart = null;
+      var dragSavedEnd = null;
 
-      // ---- Helpers ----
+      // ============================================================
+      //  CUSTOM BUBBLE CONTEXT MENU
+      // ============================================================
+
+      function showBubbleMenu(x, y, bubble) {
+        if (inSelectionMode) return;
+        longPressBubble = bubble;
+        bubbleMenu.style.display = 'flex';
+        // Measure
+        var menuW = bubbleMenu.offsetWidth  || 200;
+        var menuH = bubbleMenu.offsetHeight || 320;
+        // Anchor above the touch point, fall back to below
+        var left = x - menuW / 2;
+        var top  = y - menuH - 24;
+        if (top < 60) top = y + 24;
+        if (left < 8) left = 8;
+        if (left + menuW > window.innerWidth - 8) left = window.innerWidth - 8 - menuW;
+        bubbleMenu.style.left = left + 'px';
+        bubbleMenu.style.top  = top  + 'px';
+      }
+      function hideBubbleMenu() { bubbleMenu.style.display = 'none'; }
+
+      // Long-press on a bubble
+      function startLongPress(e, clientX, clientY) {
+        var bubble = e.target.closest && e.target.closest('.bubble');
+        if (!bubble) return;
+        hideBubbleMenu();
+        longPressBubble = bubble;
+        longPressX = clientX;
+        longPressY = clientY;
+        clearTimeout(longPressTimer);
+        longPressTimer = setTimeout(function () {
+          showBubbleMenu(longPressX, longPressY, longPressBubble);
+        }, 480);
+      }
+      function cancelLongPress() {
+        clearTimeout(longPressTimer);
+      }
+
+      document.addEventListener('touchstart', function (e) {
+        startLongPress(e, e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
+      document.addEventListener('touchend',    cancelLongPress);
+      document.addEventListener('touchmove',   cancelLongPress);
+      document.addEventListener('touchcancel', cancelLongPress);
+
+      document.addEventListener('mousedown', function (e) {
+        if (e.button !== 0) return;
+        startLongPress(e, e.clientX, e.clientY);
+      });
+      document.addEventListener('mouseup',           cancelLongPress);
+      document.addEventListener('mousemove', function (e) { if (e.buttons) cancelLongPress(); });
+
+      // Menu item clicks
+      bubbleMenu.addEventListener('click', function (e) {
+        var item = e.target.closest('.menu-item');
+        if (!item) return;
+        e.stopPropagation();
+        var action = item.dataset.action;
+        var bubble = longPressBubble;
+        hideBubbleMenu();
+        if (!bubble) return;
+        if (action === 'copy') {
+          copyText(bubble.textContent).then(function () { showToast('已复制'); })
+                                      .catch(function () { showToast('复制失败'); });
+        } else if (action === 'select') {
+          enterSelectionMode(bubble);
+        } else if (action === 'edit') {
+          showToast('编辑功能：' + truncate(bubble.textContent, 18));
+        } else if (action === 'polish') {
+          showToast('润色功能开发中');
+        } else if (action === 'regen') {
+          showToast('重新生成功能开发中');
+        } else if (action === 'delete') {
+          showToast('删除功能开发中');
+        }
+      });
+
+      // Prevent long-press on the menu itself from triggering the bubble long-press
+      bubbleMenu.addEventListener('touchstart', function (e) { e.stopPropagation(); }, { passive: true });
+      bubbleMenu.addEventListener('mousedown',  function (e) { e.stopPropagation(); });
+
+      // Hide menu when tapping outside
+      function outsideTap(e) {
+        if (bubbleMenu.style.display !== 'flex') return;
+        if (bubbleMenu.contains(e.target)) return;
+        if (e.target.closest && e.target.closest('.bubble')) return;
+        hideBubbleMenu();
+      }
+      document.addEventListener('touchstart', outsideTap, true);
+      document.addEventListener('mousedown',  outsideTap, true);
+
+      // ============================================================
+      //  SELECTION MODE (entered by "选择文字")
+      // ============================================================
+
+      function enterSelectionMode(bubble) {
+        inSelectionMode = true;
+        var range = document.createRange();
+        range.selectNodeContents(bubble);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        // Show overlay to absorb clicks outside (so they don't bubble to other handlers)
+        selectionOverlay.style.display = 'block';
+        lastPosSignature = '';
+        positionHandles();
+      }
+
+      function exitSelectionMode() {
+        inSelectionMode = false;
+        var sel = window.getSelection();
+        if (sel) sel.removeAllRanges();
+        selectionOverlay.style.display = 'none';
+        hideHandles();
+      }
+
+      selectionOverlay.addEventListener('touchstart', function (e) { e.preventDefault(); exitSelectionMode(); });
+      selectionOverlay.addEventListener('mousedown',  function (e) { e.preventDefault(); exitSelectionMode(); });
+
+      // Prevent the system from starting text selection while NOT in selection mode.
+      // This is what stops the system ActionMode toolbar (复制/分享/全选/翻译) from
+      // popping up on long-press of a bubble.
+      document.addEventListener('selectstart', function (e) {
+        if (!inSelectionMode) {
+          e.preventDefault();
+        }
+      }, true);
+
+      // ============================================================
+      //  CUSTOM HANDLE POSITIONING
+      // ============================================================
+
       function hideHandles() {
         startHandle.style.display = 'none';
         endHandle.style.display   = 'none';
-        menu.style.display        = 'none';
+        selMenu.style.display     = 'none';
       }
 
       function positionHandles() {
-        if (suppressSelection) return;
+        if (!inSelectionMode || suppressSelection) return;
         var sel = window.getSelection();
         if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
           hideHandles();
@@ -280,51 +508,45 @@
         }
         var range = sel.getRangeAt(0);
         var rects = range.getClientRects();
-        if (rects.length === 0) {
-          hideHandles();
-          lastPosSignature = '';
-          return;
-        }
-        // Some browsers include 0-width rects at line breaks — filter them.
+        if (rects.length === 0) { hideHandles(); lastPosSignature = ''; return; }
         var valid = [];
         for (var i = 0; i < rects.length; i++) {
           if (rects[i].width > 0 && rects[i].height > 0) valid.push(rects[i]);
         }
-        if (valid.length === 0) {
-          hideHandles();
-          lastPosSignature = '';
-          return;
-        }
+        if (valid.length === 0) { hideHandles(); lastPosSignature = ''; return; }
         var firstRect = valid[0];
         var lastRect  = valid[valid.length - 1];
-
-        // Skip update if nothing changed (avoids layout thrash).
-        var sig = Math.round(firstRect.left) + '|' + Math.round(firstRect.top + firstRect.height / 2) + '|' +
-                  Math.round(lastRect.right)  + '|' + Math.round(lastRect.top  + lastRect.height  / 2);
+        var sig = Math.round(firstRect.left) + '|' + Math.round(firstRect.top + firstRect.height/2) + '|' +
+                  Math.round(lastRect.right)  + '|' + Math.round(lastRect.top  + lastRect.height/2);
         if (sig === lastPosSignature) return;
         lastPosSignature = sig;
-
         startHandle.style.left = firstRect.left + 'px';
-        startHandle.style.top  = (firstRect.top + firstRect.height / 2) + 'px';
+        startHandle.style.top  = (firstRect.top + firstRect.height/2) + 'px';
         startHandle.style.display = 'flex';
-
         endHandle.style.left = lastRect.right + 'px';
-        endHandle.style.top  = (lastRect.top + lastRect.height / 2) + 'px';
+        endHandle.style.top  = (lastRect.top + lastRect.height/2) + 'px';
         endHandle.style.display = 'flex';
       }
 
-      // Debounce: selectionchange fires very frequently; coalesce.
       var posTimer = null;
       function schedulePosition() {
         if (posTimer) return;
-        posTimer = setTimeout(function () {
-          posTimer = null;
-          positionHandles();
-        }, 40);
+        posTimer = setTimeout(function () { posTimer = null; positionHandles(); }, 40);
       }
       document.addEventListener('selectionchange', schedulePosition);
 
-      // ---- Drag handling ----
+      // ============================================================
+      //  HANDLE DRAG
+      // ============================================================
+
+      function captureSavedAnchors() {
+        var sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) { dragSavedStart = dragSavedEnd = null; return; }
+        var r = sel.getRangeAt(0);
+        dragSavedStart = { node: r.startContainer, offset: r.startOffset };
+        dragSavedEnd   = { node: r.endContainer,   offset: r.endOffset   };
+      }
+
       function onDragStart(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -332,18 +554,18 @@
         didMove = false;
         dragHandle = e.currentTarget;
         suppressSelection = true;
-        hideMenu();
+        hideSelMenu();
+        captureSavedAnchors();
         var point = e.touches && e.touches.length ? e.touches[0] : e;
         dragStartX = point.clientX;
         dragStartY = point.clientY;
         dragOrigLeft = parseFloat(dragHandle.style.left) || 0;
         dragOrigTop  = parseFloat(dragHandle.style.top)  || 0;
         dragHandle.classList.add('dragging');
-
         document.addEventListener('touchmove', onDragMove, { passive: false });
         document.addEventListener('mousemove', onDragMove);
-        document.addEventListener('touchend', onDragEnd);
-        document.addEventListener('mouseup', onDragEnd);
+        document.addEventListener('touchend',  onDragEnd);
+        document.addEventListener('mouseup',   onDragEnd);
       }
 
       function onDragMove(e) {
@@ -374,13 +596,12 @@
         dragHandle.classList.remove('dragging');
         document.removeEventListener('touchmove', onDragMove);
         document.removeEventListener('mousemove', onDragMove);
-        document.removeEventListener('touchend', onDragEnd);
-        document.removeEventListener('mouseup', onDragEnd);
+        document.removeEventListener('touchend',  onDragEnd);
+        document.removeEventListener('mouseup',   onDragEnd);
 
         if (!didMove) {
-          // Tap (no drag) — show the menu anchored to this handle.
           suppressSelection = false;
-          showMenu(dragHandle);
+          showSelMenu(dragHandle);
           return;
         }
 
@@ -388,28 +609,16 @@
         var y = parseFloat(dragHandle.style.top)  || 0;
         var pos = pointToPosition(x, y);
         if (!pos) {
-          // Revert: no valid text under the release point.
           dragHandle.style.left = dragOrigLeft + 'px';
           dragHandle.style.top  = dragOrigTop  + 'px';
           suppressSelection = false;
           positionHandles();
           return;
         }
-
-        var sel = window.getSelection();
-        sel.removeAllRanges();
-        var range = document.createRange();
-        // Pick the OTHER handle's current end of the selection as the anchor.
-        // Since selectionchange was suppressed during drag, the in-DOM
-        // selection still reflects the pre-drag state.
         try {
-          var before = window.getSelection();
-          // Use the live (pre-drag) anchor/extreme as the fixed side.
+          var sel = window.getSelection();
+          sel.removeAllRanges();
           if (dragHandle === startHandle) {
-            // Moving START: keep the original END as the anchor.
-            // We can re-derive by reading the old selection from sel's stored state.
-            // Simpler: read from the current textNode mapping in DOM by storing
-            // the original start/end at drag start.
             sel.setBaseAndExtent(pos.offsetNode, pos.offset,
                                  dragSavedEnd.node, dragSavedEnd.offset);
           } else {
@@ -418,54 +627,44 @@
           }
         } catch (err) {
           // If setBaseAndExtent fails, just collapse to the new pos.
-          range.setStart(pos.offsetNode, pos.offset);
-          range.collapse(true);
-          sel.addRange(range);
+          var r = document.createRange();
+          r.setStart(pos.offsetNode, pos.offset);
+          r.collapse(true);
+          var sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(r);
         }
         suppressSelection = false;
-        lastPosSignature = '';  // force a re-position
+        lastPosSignature = '';
         positionHandles();
       }
-
-      // Capture the original selection anchors at drag start so we know
-      // which end to keep fixed when the other handle moves.
-      var dragSavedStart = null;
-      var dragSavedEnd = null;
-      function captureSavedAnchors() {
-        var sel = window.getSelection();
-        if (!sel || sel.rangeCount === 0) { dragSavedStart = dragSavedEnd = null; return; }
-        var r = sel.getRangeAt(0);
-        dragSavedStart = { node: r.startContainer, offset: r.startOffset };
-        dragSavedEnd   = { node: r.endContainer,   offset: r.endOffset   };
-      }
-
-      // Wrap onDragStart to capture the anchors first.
-      var _onDragStart = onDragStart;
-      onDragStart = function (e) {
-        captureSavedAnchors();
-        return _onDragStart(e);
-      };
 
       startHandle.addEventListener('mousedown',  onDragStart);
       startHandle.addEventListener('touchstart', onDragStart, { passive: false });
       endHandle.addEventListener('mousedown',    onDragStart);
       endHandle.addEventListener('touchstart',   onDragStart, { passive: false });
 
-      // ---- Menu ----
-      function showMenu(handle) {
+      // ============================================================
+      //  SELECTION-LEVEL MENU (复制/分享/搜索, when a handle is tapped)
+      // ============================================================
+
+      function showSelMenu(handle) {
         var rect = handle.getBoundingClientRect();
-        // Approximate menu width; measure for accuracy.
-        menu.style.display = 'flex';
-        var menuW = menu.offsetWidth || 180;
-        var left = rect.left + rect.width / 2 - menuW / 2;
-        var top  = rect.top - 12;            // place above the handle
+        selMenu.style.display = 'flex';
+        var menuW = selMenu.offsetWidth || 180;
+        var left = rect.left + rect.width/2 - menuW/2;
+        var top  = rect.top - 12;
         if (top < 10) top = rect.bottom + 12;
         if (left < 8) left = 8;
         if (left + menuW > window.innerWidth - 8) left = window.innerWidth - 8 - menuW;
-        menu.style.left = left + 'px';
-        menu.style.top  = top  + 'px';
+        selMenu.style.left = left + 'px';
+        selMenu.style.top  = top  + 'px';
       }
-      function hideMenu() { menu.style.display = 'none'; }
+      function hideSelMenu() { selMenu.style.display = 'none'; }
+
+      // ============================================================
+      //  UTILITIES
+      // ============================================================
 
       function showToast(msg) {
         toast.textContent = msg;
@@ -473,12 +672,12 @@
         clearTimeout(showToast._t);
         showToast._t = setTimeout(function () { toast.style.display = 'none'; }, 1800);
       }
+      function truncate(s, n) { return s.length > n ? s.slice(0, n) + '…' : s; }
 
       function copyText(text) {
         if (navigator.clipboard && navigator.clipboard.writeText) {
           return navigator.clipboard.writeText(text);
         }
-        // Fallback for older WebViews (Android < 6).
         return new Promise(function (resolve, reject) {
           var ta = document.createElement('textarea');
           ta.value = text;
@@ -501,52 +700,42 @@
       document.getElementById('sel-copy').addEventListener('click', function (e) {
         e.stopPropagation();
         var text = window.getSelection() ? window.getSelection().toString() : '';
-        copyText(text).then(function () {
-          showToast('已复制');
-          hideMenu();
-        }).catch(function () {
-          showToast('复制失败，请长按使用系统复制');
-          hideMenu();
-        });
+        copyText(text).then(function () { showToast('已复制'); hideSelMenu(); })
+                      .catch(function () { showToast('复制失败'); hideSelMenu(); });
       });
-
       document.getElementById('sel-share').addEventListener('click', function (e) {
         e.stopPropagation();
         var text = window.getSelection() ? window.getSelection().toString() : '';
         if (navigator.share) {
-          navigator.share({ text: text }).then(function () { hideMenu(); }).catch(function () { hideMenu(); });
+          navigator.share({ text: text }).then(function () { hideSelMenu(); }).catch(function () { hideSelMenu(); });
         } else {
-          // Fallback: try clipboard, then notify.
-          copyText(text).then(function () { showToast('已复制到剪贴板（请用系统分享）'); })
+          copyText(text).then(function () { showToast('已复制到剪贴板'); })
                          .catch(function () { showToast('当前设备不支持分享'); });
-          hideMenu();
+          hideSelMenu();
         }
       });
-
       document.getElementById('sel-search').addEventListener('click', function (e) {
         e.stopPropagation();
         var text = window.getSelection() ? window.getSelection().toString() : '';
-        // Try Google first, fall back to Baidu.
         try {
           window.open('https://www.google.com/search?q=' + encodeURIComponent(text), '_blank', 'noopener');
         } catch (err) {
           window.open('https://www.baidu.com/s?wd=' + encodeURIComponent(text), '_blank', 'noopener');
         }
-        hideMenu();
+        hideSelMenu();
       });
 
-      // Hide menu when tapping outside.
-      function outsideTap(e) {
-        if (menu.style.display !== 'flex') return;
-        var t = e.target;
-        if (t === startHandle || t === endHandle) return;
-        if (menu.contains(t)) return;
-        hideMenu();
+      // Hide sel-menu when tapping outside
+      function outsideSelMenuTap(e) {
+        if (selMenu.style.display !== 'flex') return;
+        if (selMenu.contains(e.target)) return;
+        if (e.target === startHandle || e.target === endHandle) return;
+        hideSelMenu();
       }
-      document.addEventListener('mousedown',  outsideTap, true);
-      document.addEventListener('touchstart', outsideTap, true);
+      document.addEventListener('mousedown',  outsideSelMenuTap, true);
+      document.addEventListener('touchstart', outsideSelMenuTap, true);
 
-      // Initial position pass.
+      // Initial
       positionHandles();
     })();
   </script>
