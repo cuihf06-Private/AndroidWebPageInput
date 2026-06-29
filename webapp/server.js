@@ -11,13 +11,35 @@ const sessions = new Map();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get('/', (req, res) => {
-  res.send(getHTML('login'));
-});
+const fs = require('fs');
+const path = require('path');
+const ASSET_DIR = path.join(__dirname, '..', 'android', 'app', 'src', 'main', 'assets');
 
-app.get('/register', (req, res) => {
-  res.send(getHTML('register'));
-});
+function serveAsset(filename) {
+  return (req, res) => {
+    const p = path.join(ASSET_DIR, filename);
+    fs.readFile(p, 'utf8', (err, html) => {
+      if (err) {
+        res.status(500).send('Asset not found: ' + filename + ' (' + err.message + ')');
+        return;
+      }
+      res.type('html').send(html);
+    });
+  };
+}
+
+// Login + register both serve the bundled index.html (it accepts any
+// non-empty username/password). The page itself decides whether to
+// show "登录" or "注册" semantics.
+app.get('/',         serveAsset('index.html'));
+app.get('/login',    serveAsset('index.html'));
+app.get('/register', serveAsset('index.html'));
+
+// Chat page — the bundled chat.html expects to be loaded as a real
+// file (it passes user via location.hash). On the web we serve it
+// at /chat.html so the relative URL the login page uses resolves.
+app.get('/chat.html', serveAsset('chat.html'));
+app.get('/index.html', serveAsset('index.html'));
 
 app.post('/api/register', (req, res) => {
   const { username, password } = req.body;
@@ -46,14 +68,11 @@ app.post('/api/login', (req, res) => {
   res.json({ success: true, message: '登录成功', username });
 });
 
-// Chat page — only reachable after login
+// Old sid-based chat URL — kept as a redirect so any bookmark still works.
+// New code uses /chat.html (the bundled chat.html) which is fully
+// self-contained.
 app.get('/chat', (req, res) => {
-  const sid = (req.query.sid || '').toString();
-  const username = sessions.get(sid);
-  if (!username) {
-    return res.redirect('/');
-  }
-  res.send(getChatHTML(username));
+  res.redirect('/chat.html');
 });
 
 app.get('/logout', (req, res) => {
